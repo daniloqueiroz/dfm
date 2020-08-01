@@ -14,7 +14,7 @@ const (
 )
 
 type filelist struct {
-	elem           *tview.List
+	elem *tview.List
 }
 
 func (f filelist) update(items []view.FileItem) {
@@ -50,10 +50,16 @@ func (f filelist) registerKeyHandlers(evChan chan interface{}) {
 	// TODO fuzzy search if user start typing ?
 	// 	"github.com/sahilm/fuzzy"
 	//f.elem.FindItems()
+	f.elem.SetChangedFunc(func(pos int, _ string, name string, _ rune) {
+		evChan <- view.FileListItemHover{
+			Pos:  pos,
+			Name: name,
+		}
+	})
 	f.elem.SetSelectedFunc(func(pos int, _ string, name string, _ rune) {
 		evChan <- view.FileListItemSelected{
 			Pos:  pos,
-			Name: tview.Escape(name),
+			Name: name,
 		}
 	})
 }

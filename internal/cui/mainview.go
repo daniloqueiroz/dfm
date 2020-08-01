@@ -72,8 +72,10 @@ func (w *Window) ToggleInputBar() {
 	panic("implement me")
 }
 
-func (w *Window) SetDetails(details string) {
-	panic("implement me")
+func (w *Window) SetDetails(details interface{}) {
+	w.app.QueueUpdateDraw(func() {
+		w.ctxView.update(details)
+	})
 }
 
 func (w *Window) registerKeyHandlers() {
@@ -85,7 +87,7 @@ func (w *Window) Show(handler func(interface{})) {
 	defer internal.OnPanic("Window:Show")
 	go func() {
 		for ev := range w.evChan {
-			handler(ev)
+			go handler(ev)
 		}
 	}()
 
@@ -97,8 +99,11 @@ func (w *Window) Show(handler func(interface{})) {
 	grid.AddItem(w.stBar.elem, 8, 0, 1, 4, 0, 0, false)
 	//grid.AddItem(cmdBar, 8,0,1,4,0,0,false)
 	w.app.SetRoot(grid, true).SetFocus(w.flView.elem)
+
 	w.app.SetAfterDrawFunc(w.afterDraw)
 	w.registerKeyHandlers()
+
+	logger.Infof("Starting app loop")
 	if err := w.app.Run(); err != nil {
 		panic(err)
 	}

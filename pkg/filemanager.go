@@ -5,6 +5,7 @@ import (
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/daniloqueiroz/dfm/pkg/vfs/localfs"
 	"log"
+	"os"
 )
 
 type FileManager struct {
@@ -43,6 +44,10 @@ func (m FileManager) NavNext() {
 
 func (m FileManager) CD(name string) error {
 	return m.context().CD(name)
+}
+
+func (m FileManager) Stats(name string) (os.FileInfo, error) {
+	return m.context().Stats(name)
 }
 
 func NewFileManager(basedir string) *FileManager {

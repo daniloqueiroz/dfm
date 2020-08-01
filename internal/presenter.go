@@ -19,6 +19,7 @@ type presenter struct {
 }
 
 func (p presenter) onEvent(event interface{}) {
+	logger.Infof("ViewEvent received: %+v", event)
 	msg := ""
 	refresh := false
 	switch ev := event.(type) {
@@ -30,6 +31,19 @@ func (p presenter) onEvent(event interface{}) {
 	case view.NavNext:
 		p.fm.NavNext()
 		refresh = true
+	case view.FileListItemHover:
+		stats, err := p.fm.Stats(ev.Name)
+		if err != nil {
+			logger.Warningf("Error retrieving %s stats", ev.Name)
+		} else if stats != nil {
+			p.v.SetDetails(view.FileDetails{
+				Size:    stats.Size(),
+				Mode:    stats.Mode(),
+				ModTime: stats.ModTime(),
+			})
+		} else {
+			p.v.SetDetails(nil)
+		}
 	case view.FileListItemSelected:
 		// try cd file
 		err := p.fm.CD(ev.Name)

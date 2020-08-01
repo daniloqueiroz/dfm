@@ -37,7 +37,6 @@ func TestNavigation_RegularFlow(t *testing.T) {
 	assert.Equal(t, file2, nav.Current())
 }
 
-
 func TestNavigation_SetCurrentClearNext(t *testing.T) {
 	initial, _ := localfs.NewFile("/tmp/initial")
 	file1, _ := localfs.NewFile("/tmp/file1")

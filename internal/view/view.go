@@ -1,5 +1,16 @@
 package view
 
+import (
+	"os"
+	"time"
+)
+
+type FileDetails struct {
+	Size    int64
+	Mode    os.FileMode
+	ModTime time.Time
+}
+
 type FileItem struct {
 	Name     string
 	FullPath string
@@ -20,5 +31,5 @@ type View interface {
 	UpdateFileList(items []FileItem)
 	SetStatusMessage(info Status)
 	ToggleInputBar()
-	SetDetails(details string)
+	SetDetails(details interface{})
 }

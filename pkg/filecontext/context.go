@@ -3,6 +3,7 @@ package filecontext
 import (
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/google/logger"
+	"os"
 )
 
 type FileContext struct {
@@ -56,6 +57,19 @@ func (fc FileContext) CD(name string) error {
 
 	fc.nav.SetCurrent(file)
 	return nil
+}
+
+func (fc FileContext) Stats(name string) (os.FileInfo, error) {
+	if name == ".." {
+		return nil, nil
+	} else {
+		file, err := fc.fs.GetFile(name)
+		if err != nil {
+			return nil, err
+		} else {
+			return file.Stats()
+		}
+	}
 }
 
 func NewFileContext(fs vfs.FileSystem) *FileContext {
