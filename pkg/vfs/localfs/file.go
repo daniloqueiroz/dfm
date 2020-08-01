@@ -16,6 +16,23 @@ type localFile struct {
 	info     os.FileInfo
 }
 
+func (f *localFile) Parent() vfs.File {
+	if f.fullpath == "/" {
+		return nil
+	}
+
+	var parentPath string
+	stats, err := f.Stats()
+	if err != nil {
+		parentPath = filepath.Dir(f.fullpath)
+	} else if stats.IsDir() {
+		parentPath = filepath.Clean(filepath.Dir(filepath.Join(f.fullpath, "..")))
+	}
+
+	file, _ := NewFile(parentPath)
+	return file
+}
+
 func (f *localFile) Exists() bool {
 	return f.exists
 }

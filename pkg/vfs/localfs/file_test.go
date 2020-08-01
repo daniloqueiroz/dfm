@@ -48,3 +48,17 @@ func TestNewFile_absolutePathFileDoesntExists(t *testing.T) {
 	assert.Nil(t, stats)
 	assert.Errorf(t, err, "file: file %s doesn't exists", name)
 }
+
+func TestFile_parent(t *testing.T) {
+	file, err := NewFile("/tmp/lala")
+	assert.Nil(t, err)
+
+	parent1 := file.Parent()
+	assert.Equal(t, "/tmp", parent1.Path())
+
+	parent2 := parent1.Parent()
+	assert.Equal(t, "/", parent2.Path())
+
+	parent3 := parent2.Parent()
+	assert.Nil(t, parent3)
+}

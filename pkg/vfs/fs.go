@@ -3,7 +3,7 @@ package vfs
 import "os"
 
 type File interface {
-	//Parent() File
+	Parent() File
 	Exists() bool
 	IsHidden() bool
 	Name() string

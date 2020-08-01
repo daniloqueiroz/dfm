@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/daniloqueiroz/dfm/internal/view"
 	"github.com/daniloqueiroz/dfm/pkg"
+	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/google/logger"
 	"log"
 )
@@ -35,7 +36,7 @@ func (p presenter) onEvent(event interface{}) {
 		if err != nil {
 			// file isn't a dir or doesnt exists
 			logger.Warningf("Can't change dir: %v", err)
-			msg = "Can't change dir"  // TODO clear msg after x secs
+			msg = "Can't change dir" // TODO clear msg after x secs
 		}
 		refresh = true
 	default:
@@ -47,8 +48,9 @@ func (p presenter) onEvent(event interface{}) {
 }
 
 func (p presenter) refresh(msg string) {
-	p.v.SetCurrentDir(p.fm.GetCWD().Path())
-	items := p.getFiles()
+	cwd := p.fm.GetCWD()
+	p.v.SetCurrentDir(cwd.Path())
+	items := p.getFiles(cwd)
 	p.v.UpdateFileList(items)
 	p.v.SetStatusMessage(view.Status{
 		Context:            p.fm.GetContextNumber(),
@@ -58,7 +60,7 @@ func (p presenter) refresh(msg string) {
 	})
 }
 
-func (p presenter) getFiles() []view.FileItem {
+func (p presenter) getFiles(cwd vfs.File) []view.FileItem {
 	files, err := p.fm.ListFile()
 	if err != nil {
 		log.Fatalf("Error listing files: %v", err)
@@ -77,6 +79,16 @@ func (p presenter) getFiles() []view.FileItem {
 				Size:     stats.Size(),
 			})
 		}
+	}
+	parent := cwd.Parent()
+	if parent != nil {
+		stats, _ := parent.Stats()
+		items = append(items, view.FileItem{
+			Name:     "..",
+			FullPath: parent.Path(),
+			IsDir:    stats.IsDir(),
+			Size:     stats.Size(),
+		})
 	}
 	return items
 }

@@ -10,44 +10,51 @@ type FileContext struct {
 	fs  vfs.FileSystem
 }
 
-func (c FileContext) GetCWD() vfs.File {
-	return c.fs.GetCWD()
+func (fc FileContext) GetCWD() vfs.File {
+	return fc.fs.GetCWD()
 }
 
-func (c FileContext) ListFiles() ([]vfs.File, error) {
-	return c.fs.List()
+func (fc FileContext) ListFiles() ([]vfs.File, error) {
+	return fc.fs.List()
 }
 
-func (c FileContext) Next() {
-	c.nav.Next()
-	err := c.fs.SetCWD(c.nav.current)
+func (fc FileContext) Next() {
+	fc.nav.Next()
+	err := fc.fs.SetCWD(fc.nav.current)
 	if err != nil {
 		logger.Errorf("Error setting fs cwd: %v", err)
-		c.nav.Previous()
+		fc.nav.Previous()
 	}
 }
 
-func (c FileContext) Previous() {
-	c.nav.Previous()
-	err := c.fs.SetCWD(c.nav.current)
+func (fc FileContext) Previous() {
+	fc.nav.Previous()
+	err := fc.fs.SetCWD(fc.nav.current)
 	if err != nil {
 		logger.Errorf("Error setting fs cwd: %v", err)
-		c.nav.Next()
+		fc.nav.Next()
 	}
 }
 
-func (c FileContext) CD(name string) error {
-	file, err := c.fs.GetFile(name)
-	if err != nil {
-		return err
+func (fc FileContext) CD(name string) error {
+	var file vfs.File
+	var err error
+
+	if name == ".." { // TODO is this the right place for this?
+		file = fc.GetCWD().Parent()
+	} else {
+		file, err = fc.fs.GetFile(name)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = c.fs.SetCWD(file)
+	err = fc.fs.SetCWD(file)
 	if err != nil {
 		return nil
 	}
 
-	c.nav.SetCurrent(file)
+	fc.nav.SetCurrent(file)
 	return nil
 }
 
