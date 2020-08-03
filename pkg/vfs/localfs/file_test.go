@@ -50,15 +50,18 @@ func TestNewFile_absolutePathFileDoesntExists(t *testing.T) {
 }
 
 func TestFile_parent(t *testing.T) {
-	file, err := NewFile("/tmp/lala")
+	file, err := NewFile("/usr/bin/bash")
 	assert.Nil(t, err)
 
 	parent1 := file.Parent()
-	assert.Equal(t, "/tmp", parent1.Path())
+	assert.Equal(t, "/usr/bin", parent1.Path())
 
 	parent2 := parent1.Parent()
-	assert.Equal(t, "/", parent2.Path())
+	assert.Equal(t, "/usr", parent2.Path())
 
 	parent3 := parent2.Parent()
-	assert.Nil(t, parent3)
+	assert.Equal(t, "/", parent3.Path())
+
+	parent4 := parent3.Parent()
+	assert.Nil(t, parent4)
 }

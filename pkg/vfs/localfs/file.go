@@ -22,11 +22,11 @@ func (f *localFile) Parent() vfs.File {
 	}
 
 	var parentPath string
-	stats, err := f.Stats()
-	if err != nil {
+	stats, _ := f.Stats()
+	if stats != nil && stats.IsDir() {
+		parentPath = filepath.Clean(filepath.Join(f.fullpath, ".."))
+	} else {
 		parentPath = filepath.Dir(f.fullpath)
-	} else if stats.IsDir() {
-		parentPath = filepath.Clean(filepath.Dir(filepath.Join(f.fullpath, "..")))
 	}
 
 	file, _ := NewFile(parentPath)
