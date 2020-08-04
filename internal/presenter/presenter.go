@@ -29,6 +29,9 @@ func (p *presenter) onEvent(event interface{}) {
 		p.v.Quit()
 	case view.ToggleHiddenFilesVisibility:
 		p.cfg.hideHidden = !p.cfg.hideHidden
+		cwd := p.fm.GetCWD()
+		p.data.fileList = p.getFiles(cwd)
+		p.data.status = p.getStatus()
 		p.data.toRefresh = FileListView | StatusBar
 	case view.ToggleFileSelectionView:
 		p.cfg.showSelection = !p.cfg.showSelection
