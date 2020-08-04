@@ -16,8 +16,8 @@ func (l locationbar) update(path string) {
 func newLocationBar() *locationbar {
 	l := tview.NewTextView()
 	l.SetBorder(false)
-	l.SetTextColor(tcell.ColorDarkBlue)
-	l.SetTextAlign(tview.AlignCenter)
+	l.SetTextColor(tcell.ColorBlueViolet)
+	l.SetTextAlign(tview.AlignLeft)
 	return &locationbar{
 		elem: l,
 	}

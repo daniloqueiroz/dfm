@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"github.com/daniloqueiroz/dfm/internal/view"
+	"github.com/gdamore/tcell"
 	"github.com/inhies/go-bytesize"
 	"github.com/rivo/tview"
 	"strings"
@@ -23,14 +24,14 @@ func (c contextpane) update(details interface{}) {
 			d.Mode.String(),
 			bytesize.New(float64(d.Size)),
 		)
-		//c.elem.SetTitle("File Details")
+		c.elem.SetTitle("File Details")
 	case []view.FileItem:
 		var b strings.Builder
 		for _, file := range d {
 			b.WriteString(fmt.Sprintf("%s\n", file.FullPath))
 		}
 		text = b.String()
-		//c.elem.SetTitle("Selected Files")
+		c.elem.SetTitle("Selected Files")
 	}
 	if text != "" {
 		c.elem.SetText(text)
@@ -42,6 +43,8 @@ func (c contextpane) update(details interface{}) {
 func newContextPane() *contextpane {
 	d := tview.NewTextView()
 	d.SetBorder(true)
+	d.SetBorderColor(tcell.ColorBlack)
+	d.SetTitleAlign(tview.AlignCenter)
 	//d.SetTitle("File Details")
 	return &contextpane{
 		elem: d,
