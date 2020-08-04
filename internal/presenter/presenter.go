@@ -35,9 +35,21 @@ func (p *presenter) onEvent(event interface{}) {
 		p.data.toRefresh = ContextView
 	case view.NavPrev:
 		p.fm.NavPrev()
+		cwd := p.fm.GetCWD()
+		p.data.location = cwd.Path()
+		p.data.fileList = p.getFiles(cwd)
+		p.data.selectedList = p.getSelectedItems()
+		p.data.status = p.getStatus()
+		p.data.fileDetail = nil
 		p.data.toRefresh = ALL
 	case view.NavNext:
 		p.fm.NavNext()
+		cwd := p.fm.GetCWD()
+		p.data.location = cwd.Path()
+		p.data.fileList = p.getFiles(cwd)
+		p.data.selectedList = p.getSelectedItems()
+		p.data.status = p.getStatus()
+		p.data.fileDetail = nil
 		p.data.toRefresh = ALL
 	case view.FileListItemHover:
 		stats, err := p.fm.Stats(ev.Name)
@@ -60,7 +72,6 @@ func (p *presenter) onEvent(event interface{}) {
 }
 
 func (p *presenter) handleItemSelectedEvent(ev view.FileListItemSelected) {
-
 	switch ev.SelectionMode {
 	case view.Open:
 		err := p.fm.CD(ev.Name)
