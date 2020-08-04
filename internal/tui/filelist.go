@@ -1,8 +1,9 @@
-package cui
+package tui
 
 import (
 	"fmt"
 	"github.com/daniloqueiroz/dfm/internal/view"
+	"github.com/gdamore/tcell"
 	"github.com/inhies/go-bytesize"
 	"github.com/rivo/tview"
 	"sort"
@@ -50,6 +51,25 @@ func (f filelist) registerKeyHandlers(evChan chan interface{}) {
 	// TODO fuzzy search if user start typing ?
 	// 	"github.com/sahilm/fuzzy"
 	//f.elem.FindItems()
+	f.elem.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		selectedPos := f.elem.GetCurrentItem()
+		_, selectedName := f.elem.GetItemText(selectedPos)
+		switch event.Rune() {
+		case '+':
+			evChan <- view.FileListItemSelected{
+				Pos:           selectedPos,
+				Name:          selectedName,
+				SelectionMode: view.AddSelectionList,
+			}
+		case '-':
+			evChan <- view.FileListItemSelected{
+				Pos:           selectedPos,
+				Name:          selectedName,
+				SelectionMode: view.RemoveSelectionList,
+			}
+		}
+		return event
+	})
 	f.elem.SetChangedFunc(func(pos int, _ string, name string, _ rune) {
 		evChan <- view.FileListItemHover{
 			Pos:  pos,
@@ -58,8 +78,9 @@ func (f filelist) registerKeyHandlers(evChan chan interface{}) {
 	})
 	f.elem.SetSelectedFunc(func(pos int, _ string, name string, _ rune) {
 		evChan <- view.FileListItemSelected{
-			Pos:  pos,
-			Name: name,
+			Pos:           pos,
+			Name:          name,
+			SelectionMode: view.Open,
 		}
 	})
 }

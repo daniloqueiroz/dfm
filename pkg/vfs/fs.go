@@ -2,6 +2,15 @@ package vfs
 
 import "os"
 
+type FileSet interface {
+	Len() int
+	Contains(File) bool
+	Add(File)
+	Remove(File)
+	Clear()
+	Iterator() []File
+}
+
 type File interface {
 	Parent() File
 	Exists() bool

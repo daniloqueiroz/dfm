@@ -72,6 +72,10 @@ func (fc FileContext) Stats(name string) (os.FileInfo, error) {
 	}
 }
 
+func (fc FileContext) GetFile(name string) (vfs.File, error) {
+	return fc.fs.GetFile(name)
+}
+
 func NewFileContext(fs vfs.FileSystem) *FileContext {
 	root := fs.GetCWD()
 	return &FileContext{

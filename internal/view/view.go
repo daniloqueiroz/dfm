@@ -5,12 +5,7 @@ import (
 	"time"
 )
 
-type FileDetails struct {
-	Size    int64
-	Mode    os.FileMode
-	ModTime time.Time
-}
-
+// View data models
 type FileItem struct {
 	Name     string
 	FullPath string
@@ -20,16 +15,21 @@ type FileItem struct {
 
 type Status struct {
 	Context            int
-	Message            string
 	FilesCount         int
 	SelectedFilesCount int
 }
 
+type FileDetails struct {
+	Size    int64
+	Mode    os.FileMode
+	ModTime time.Time
+}
+
 type View interface {
 	Show(eventHandler func(interface{}))
-	SetCurrentDir(path string)
-	UpdateFileList(items []FileItem)
+	SetLocationBar(path string)
+	SetFileList(items []FileItem)
 	SetStatusMessage(info Status)
-	ToggleInputBar()
-	SetDetails(details interface{})
+	SetContextDetails(details interface{})
+	Quit()
 }

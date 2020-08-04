@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/akamensky/argparse"
-	"github.com/daniloqueiroz/dfm/internal"
-	"github.com/daniloqueiroz/dfm/internal/cui"
+	"github.com/daniloqueiroz/dfm/internal/presenter"
+	"github.com/daniloqueiroz/dfm/internal/tui"
 	"github.com/daniloqueiroz/dfm/pkg"
 	"github.com/google/logger"
 	"io/ioutil"
@@ -31,8 +31,8 @@ func main() {
 	}
 
 	fm := pkg.NewFileManager(*startDir)
-	w := cui.NewWindow()
-	p := internal.NewPresenter(fm, w)
+	w := tui.NewWindow()
+	p := presenter.NewPresenter(fm, w)
 	logger.Info("Starting dfm")
 	p.Start()
 }

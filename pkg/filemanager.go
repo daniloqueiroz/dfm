@@ -4,6 +4,7 @@ import (
 	"github.com/daniloqueiroz/dfm/pkg/filecontext"
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/daniloqueiroz/dfm/pkg/vfs/localfs"
+	"github.com/google/logger"
 	"log"
 	"os"
 )
@@ -11,43 +12,66 @@ import (
 type FileManager struct {
 	contexts       []*filecontext.FileContext
 	currentContext int
-	selection      []*vfs.File
+	selection      vfs.FileSet
 }
 
-func (m FileManager) context() *filecontext.FileContext {
-	return m.contexts[m.currentContext]
+func (fm *FileManager) context() *filecontext.FileContext {
+	return fm.contexts[fm.currentContext]
 }
 
-func (m FileManager) GetCWD() vfs.File {
-	return m.context().GetCWD()
+func (fm *FileManager) GetCWD() vfs.File {
+	return fm.context().GetCWD()
 }
 
-func (m FileManager) ListFile() ([]vfs.File, error) {
-	return m.context().ListFiles()
+func (fm *FileManager) ListFile() ([]vfs.File, error) {
+	return fm.context().ListFiles()
 }
 
-func (m FileManager) GetContextNumber() int {
-	return m.currentContext
+func (fm *FileManager) GetContextNumber() int {
+	return fm.currentContext
 }
 
-func (m FileManager) CountSelectedFiles() int {
-	return len(m.selection)
+func (fm *FileManager) CountSelectedFiles() int {
+	return fm.selection.Len()
 }
 
-func (m FileManager) NavPrev() {
-	m.context().Previous()
+func (fm *FileManager) NavPrev() {
+	fm.context().Previous()
 }
 
-func (m FileManager) NavNext() {
-	m.context().Next()
+func (fm *FileManager) NavNext() {
+	fm.context().Next()
 }
 
-func (m FileManager) CD(name string) error {
-	return m.context().CD(name)
+func (fm *FileManager) CD(name string) error {
+	return fm.context().CD(name)
 }
 
-func (m FileManager) Stats(name string) (os.FileInfo, error) {
-	return m.context().Stats(name)
+func (fm *FileManager) Stats(name string) (os.FileInfo, error) {
+	return fm.context().Stats(name)
+}
+
+func (fm *FileManager) SelectedFiles() []vfs.File {
+	return fm.selection.Iterator()
+}
+
+func (fm *FileManager) Select(name string) {
+	file, err := fm.context().GetFile(name)
+	if err != nil {
+		logger.Warningf("Unable to select file: %+v", err)
+	} else {
+		fm.selection.Add(file)
+	}
+}
+
+func (fm *FileManager) Deselect(name string) {
+	file, err := fm.context().GetFile(name)
+	if err != nil {
+		logger.Warningf("Unable to deselect file: %+v", err)
+	} else {
+		fm.selection.Remove(file)
+
+	}
 }
 
 func NewFileManager(basedir string) *FileManager {
@@ -59,6 +83,6 @@ func NewFileManager(basedir string) *FileManager {
 	return &FileManager{
 		contexts:       []*filecontext.FileContext{ctx},
 		currentContext: 0,
-		selection:      make([]*vfs.File, 0),
+		selection:      vfs.NewFileSet(),
 	}
 }

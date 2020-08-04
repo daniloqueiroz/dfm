@@ -1,4 +1,4 @@
-package cui
+package tui
 
 import (
 	"fmt"
@@ -11,13 +11,11 @@ type statusbar struct {
 }
 
 func (s statusbar) update(info view.Status) {
-	counters := fmt.Sprintf("# files: %d", info.FilesCount)
-	if info.SelectedFilesCount > 0 {
-		counters = fmt.Sprintf("# files selected: %d | %s", info.SelectedFilesCount, counters)
-	}
+	counters := fmt.Sprintf("# files selected: %d | # files: %d", info.SelectedFilesCount, info.FilesCount)
 	_, _, width, _ := s.elem.GetRect()
-	padding := width - (len(counters) + 4 + len(info.Message))
-	msg := fmt.Sprintf("[%d] %s%*s", info.Context, info.Message, padding, counters)
+	prefix := fmt.Sprintf("[ %d ]", info.Context)
+	padding := width - (len(prefix) + len(counters))
+	msg := fmt.Sprintf("%s%*s", prefix, padding, counters)
 	s.elem.SetText(msg)
 }
 

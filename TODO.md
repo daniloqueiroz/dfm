@@ -1,9 +1,10 @@
 - [x] Show file details
+- [x] File Selection
 - [ ] Display user/group in context view
-- [ ] Selection Mode
+- [ ] Current dir file search (view only)
+- [ ] Recursive file search (fs search)
 - [ ] Use Flex instead of Grid
 - [ ] Inotify and FS caching
-- [ ] File fuzzy search 
 - [ ] Support multiple file contexts
-- [ ] Command mode
+- [ ] File(s) Action
  

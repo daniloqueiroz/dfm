@@ -1,4 +1,4 @@
-package cui
+package tui
 
 import (
 	"fmt"
@@ -34,9 +34,21 @@ func (w *Window) keyHandler(event *tcell.EventKey) *tcell.EventKey {
 
 	switch event.Rune() {
 	case 'q':
+		w.evChan <- view.Quit{}
+	case 'h':
+		w.evChan <- view.ToggleHiddenFilesVisibility{}
+		return nil
+	case 'S':
+		w.evChan <- view.ToggleFileSelectionView{}
 		return nil
 	}
+
 	return result
+}
+
+func (w *Window) registerKeyHandlers() {
+	w.app.SetInputCapture(w.keyHandler)
+	w.flView.registerKeyHandlers(w.evChan)
 }
 
 func (w *Window) afterDraw(s tcell.Screen) {
@@ -45,18 +57,18 @@ func (w *Window) afterDraw(s tcell.Screen) {
 	if w.screenSize == "" || w.screenSize != screenSize {
 		logger.Infof("Screen size changed: %s", screenSize)
 		w.screenSize = screenSize
-		w.evChan <- view.ViewSizeChanged{}
+		w.evChan <- view.ScreenSizeChanged{}
 	}
 }
 
-func (w *Window) SetCurrentDir(path string) {
+func (w *Window) SetLocationBar(path string) {
 	w.app.QueueUpdateDraw(func() {
 		w.lcBar.elem.SetText(path)
 	})
 
 }
 
-func (w *Window) UpdateFileList(items []view.FileItem) {
+func (w *Window) SetFileList(items []view.FileItem) {
 	w.app.QueueUpdateDraw(func() {
 		w.flView.update(items)
 	})
@@ -68,26 +80,17 @@ func (w *Window) SetStatusMessage(info view.Status) {
 	})
 }
 
-func (w *Window) ToggleInputBar() {
-	panic("implement me")
-}
-
-func (w *Window) SetDetails(details interface{}) {
+func (w *Window) SetContextDetails(details interface{}) {
 	w.app.QueueUpdateDraw(func() {
 		w.ctxView.update(details)
 	})
-}
-
-func (w *Window) registerKeyHandlers() {
-	w.app.SetInputCapture(w.keyHandler)
-	w.flView.registerKeyHandlers(w.evChan)
 }
 
 func (w *Window) Show(handler func(interface{})) {
 	defer internal.OnPanic("Window:Show")
 	go func() {
 		for ev := range w.evChan {
-			go handler(ev)
+			handler(ev)
 		}
 	}()
 
@@ -109,7 +112,11 @@ func (w *Window) Show(handler func(interface{})) {
 	}
 }
 
-func NewWindow() *Window {
+func (w *Window) Quit() {
+	w.app.Stop()
+}
+
+func NewWindow() view.View {
 	return &Window{
 		app:        tview.NewApplication(),
 		lcBar:      newLocationBar(),
