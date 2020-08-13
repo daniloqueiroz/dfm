@@ -6,75 +6,144 @@ import (
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/google/logger"
 	"log"
+	"strings"
 )
 
-type config struct {
+type AppMode string
+
+const (
+	Navigation AppMode = "navigation"
+	Command    AppMode = "command"
+)
+
+type viewConfig struct {
+	mode          AppMode
 	hideHidden    bool
-	showSelection bool
+	showSelection bool // context mode
 }
 
 type presenter struct {
-	v    view.View
-	fm   *pkg.FileManager
-	cfg  *config
-	data *viewData
+	quitFunc func()
+	fm       *pkg.FileManager
+	cfg      *viewConfig
+	data     *viewData
 }
 
 func (p *presenter) onEvent(event interface{}) {
-	logger.Infof("ViewEvent received: %T", event)
+	logger.Infof("event received: %T", event)
 	switch ev := event.(type) {
 	case view.ScreenSizeChanged:
 		p.data.toRefresh = ALL
-	case view.Quit:
-		p.v.Quit()
+	case view.Command:
+		p.onCommandInput(ev.Cmdline)
+	case view.ToggleCommandMode:
+		p.onCommandModeEvent(ev)
 	case view.ToggleHiddenFilesVisibility:
-		p.cfg.hideHidden = !p.cfg.hideHidden
-		cwd := p.fm.GetCWD()
-		p.data.fileList = p.getFiles(cwd)
-		p.data.status = p.getStatus()
-		p.data.toRefresh = FileListView | StatusBar
+		p.onFileVisibilityEvent()
 	case view.ToggleFileSelectionView:
-		p.cfg.showSelection = !p.cfg.showSelection
-		p.data.toRefresh = ContextView
+		p.onToggleSelectionViewEvent()
 	case view.NavPrev:
-		p.fm.NavPrev()
-		cwd := p.fm.GetCWD()
-		p.data.location = cwd.Path()
-		p.data.fileList = p.getFiles(cwd)
-		p.data.selectedList = p.getSelectedItems()
-		p.data.status = p.getStatus()
-		p.data.fileDetail = nil
-		p.data.toRefresh = ALL
+		p.onNavPrevEvent()
 	case view.NavNext:
-		p.fm.NavNext()
-		cwd := p.fm.GetCWD()
-		p.data.location = cwd.Path()
-		p.data.fileList = p.getFiles(cwd)
-		p.data.selectedList = p.getSelectedItems()
-		p.data.status = p.getStatus()
-		p.data.fileDetail = nil
-		p.data.toRefresh = ALL
+		p.onNavNextEvent()
 	case view.FileListItemHover:
-		stats, err := p.fm.Stats(ev.Name)
-		if err != nil {
-			logger.Warningf("Error retrieving %s stats", ev.Name)
-		} else if stats != nil {
-			p.data.fileDetail = &view.FileDetails{
-				Size:    stats.Size(),
-				Mode:    stats.Mode(),
-				ModTime: stats.ModTime(),
-			}
-		}
-		p.data.toRefresh = ContextView
+		p.onListListHoverEvent(ev)
 	case view.FileListItemSelected:
-		p.handleItemSelectedEvent(ev)
+		p.onItemSelectedEvent(ev)
 	default:
 		logger.Infof("Unhandled event: %v", ev)
 	}
-	go refresh(p.v, *p.data, *p.cfg)
+	go refresh(viewUpdateEvent{
+		data: *p.data,
+		cfg:  *p.cfg,
+	})
 }
 
-func (p *presenter) handleItemSelectedEvent(ev view.FileListItemSelected) {
+func (p *presenter) onToggleSelectionViewEvent() {
+	p.cfg.showSelection = !p.cfg.showSelection
+	p.data.toRefresh = ContextView
+}
+
+func (p *presenter) onCommandInput(cmdline string) {
+	tokens := strings.Split(cmdline, " ")
+	cmd := tokens[0]
+	params := strings.TrimSpace(cmdline[len(cmd):])
+	switch cmd {
+	case QuitCommand, QuitCommandShort:
+		p.quitFunc()
+	case SelectionToggleCommandShort:
+		p.onToggleSelectionViewEvent()
+	case HiddenToggleCommandShort:
+		p.onFileVisibilityEvent()
+	case ToggleCommand:
+		if params == "selection" || params == "details" {
+			p.onToggleSelectionViewEvent()
+		} else if params == "hidden" {
+			p.onFileVisibilityEvent()
+		}
+	}
+	p.data.toRefresh = p.data.toRefresh | Focus | CommandBar
+	p.cfg.mode = Navigation
+}
+
+func (p *presenter) onNavNextEvent() {
+	p.fm.NavNext()
+	cwd := p.fm.GetCWD()
+	p.data.location = cwd.Path()
+	p.data.fileList = p.getFiles(cwd)
+	p.data.selectedList = p.getSelectedItems()
+	p.data.status = p.getStatus()
+	p.data.fileDetail = nil
+	p.data.toRefresh = ALL
+}
+
+func (p *presenter) onNavPrevEvent() {
+	p.fm.NavPrev()
+	cwd := p.fm.GetCWD()
+	p.data.location = cwd.Path()
+	p.data.fileList = p.getFiles(cwd)
+	p.data.selectedList = p.getSelectedItems()
+	p.data.status = p.getStatus()
+	p.data.fileDetail = nil
+	p.data.toRefresh = ALL
+}
+
+func (p *presenter) onFileVisibilityEvent() {
+	p.cfg.hideHidden = !p.cfg.hideHidden
+	cwd := p.fm.GetCWD()
+	p.data.fileList = p.getFiles(cwd)
+	p.data.status = p.getStatus()
+	p.data.toRefresh = FileListView | StatusBar
+}
+
+func (p *presenter) onListListHoverEvent(ev view.FileListItemHover) {
+	stats, err := p.fm.Stats(ev.Name)
+	if err != nil {
+		logger.Warningf("Error retrieving %s stats", ev.Name)
+	} else if stats != nil {
+		p.data.fileDetail = &view.FileDetails{
+			Size:    stats.Size(),
+			Mode:    stats.Mode(),
+			ModTime: stats.ModTime(),
+		}
+	}
+	p.data.toRefresh = ContextView
+}
+
+func (p *presenter) onCommandModeEvent(ev view.ToggleCommandMode) {
+	p.data.toRefresh = Focus | CommandBar
+	p.data.commandBarContent = ""
+	if p.cfg.mode != Navigation {
+		p.cfg.mode = Navigation
+	} else {
+		p.cfg.mode = Command
+		if ev.Prefix != 0 {
+			p.data.commandBarContent = string(ev.Prefix)
+		}
+	}
+}
+
+func (p *presenter) onItemSelectedEvent(ev view.FileListItemSelected) {
 	switch ev.SelectionMode {
 	case view.Open:
 		err := p.fm.CD(ev.Name)
@@ -125,7 +194,6 @@ func (p *presenter) getSelectedItems() []view.FileItem {
 	}
 
 	return items
-	// TODO update number of selected on status
 }
 
 func (p *presenter) getFiles(cwd vfs.File) []view.FileItem {
@@ -168,17 +236,24 @@ func (p *presenter) Start() {
 	p.data.status = p.getStatus()
 	p.data.fileDetail = nil
 	p.data.selectedList = p.getSelectedItems()
-	p.v.Show(p.onEvent)
+	p.data.commandBarContent = ""
+	p.data.start()
 }
 
 func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {
-	return &presenter{
-		v:  view,
-		fm: fm,
-		cfg: &config{
+	p := &presenter{
+		quitFunc: view.Quit,
+		fm:       fm,
+		cfg: &viewConfig{
+			mode:          Navigation,
 			hideHidden:    true,
 			showSelection: false,
 		},
-		data: &viewData{},
+		data: &viewData{
+			view: view,
+		},
 	}
+	view.OnEvent(p.onEvent)
+
+	return p
 }

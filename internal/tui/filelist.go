@@ -87,8 +87,6 @@ func (f filelist) registerKeyHandlers(evChan chan interface{}) {
 
 func newFilelist() *filelist {
 	list := tview.NewList()
-	//list.SetBorder(true)
-	//list.SetTitle("files")
 	list.SetTitleAlign(tview.AlignCenter)
 	list.SetHighlightFullLine(true)
 	list.ShowSecondaryText(false)

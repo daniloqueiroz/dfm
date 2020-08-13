@@ -19,28 +19,43 @@ type Window struct {
 	stBar      *statusbar
 	cmdBar     *input
 	screenSize string
+	isFocusFl  bool
 }
 
 func (w *Window) keyHandler(event *tcell.EventKey) *tcell.EventKey {
 	result := event
 	switch event.Key() {
 	case tcell.KeyRight:
-		w.evChan <- view.NavNext{}
-		return nil
+		if w.isFocusFl {
+			w.evChan <- view.NavNext{}
+			return nil
+		}
 	case tcell.KeyLeft:
-		w.evChan <- view.NavPrev{}
+		if w.isFocusFl {
+			w.evChan <- view.NavPrev{}
+			return nil
+		}
+	case tcell.KeyESC:
+		w.evChan <- view.ToggleCommandMode{
+			Prefix: 0,
+		}
 		return nil
 	}
 
-	switch event.Rune() {
-	case 'q':
-		w.evChan <- view.Quit{}
-	case 'h':
-		w.evChan <- view.ToggleHiddenFilesVisibility{}
-		return nil
-	case 'S':
-		w.evChan <- view.ToggleFileSelectionView{}
-		return nil
+	if w.isFocusFl {
+		switch event.Rune() {
+		case ':':
+			w.evChan <- view.ToggleCommandMode{
+				Prefix: ':',
+			}
+		case '/':
+			w.evChan <- view.ToggleCommandMode{
+				Prefix: '/',
+			}
+		case 'S':
+			w.evChan <- view.ToggleFileSelectionView{}
+			return nil
+		}
 	}
 
 	return result
@@ -49,6 +64,7 @@ func (w *Window) keyHandler(event *tcell.EventKey) *tcell.EventKey {
 func (w *Window) registerKeyHandlers() {
 	w.app.SetInputCapture(w.keyHandler)
 	w.flView.registerKeyHandlers(w.evChan)
+	w.cmdBar.registerKeyHandlers(w.evChan)
 }
 
 func (w *Window) afterDraw(s tcell.Screen) {
@@ -65,7 +81,6 @@ func (w *Window) SetLocationBar(path string) {
 	w.app.QueueUpdateDraw(func() {
 		w.lcBar.elem.SetText(path)
 	})
-
 }
 
 func (w *Window) SetFileList(items []view.FileItem) {
@@ -86,18 +101,20 @@ func (w *Window) SetContextDetails(details interface{}) {
 	})
 }
 
-func (w *Window) Show(handler func(interface{})) {
-	defer internal.OnPanic("Window:Show")
+func (w *Window) OnEvent(handler func(interface{})) {
 	go func() {
 		for ev := range w.evChan {
 			handler(ev)
 		}
 	}()
+}
 
+func (w *Window) Show() {
+	defer internal.OnPanic("Window:Show")
 	emptyBox := tview.NewBox()
 	emptyBox.SetBorder(false)
 	contentLayout := tview.NewFlex()
-	contentLayout.AddItem(w.flView.elem, 0, 3, true)
+	contentLayout.AddItem(w.flView.elem, 0, 3, false)
 	contentLayout.AddItem(emptyBox, 1, 0, false)
 	contentLayout.AddItem(w.ctxView.elem, 0, 1, false)
 	contentLayout.AddItem(w.lcPane.elem, 0, 0, false)
@@ -120,7 +137,27 @@ func (w *Window) Show(handler func(interface{})) {
 	}
 }
 
+func (w *Window) SetCommandBar(prefix string) {
+	w.cmdBar.setText(prefix)
+}
+
+func (w *Window) FocusCommandBar() {
+	w.isFocusFl = false
+	w.app.SetFocus(w.cmdBar.elem)
+	w.stBar.fade()
+	w.app.Draw()
+}
+
+func (w *Window) FocusFileList() {
+	w.isFocusFl = true
+	w.cmdBar.Clear()
+	w.app.SetFocus(w.flView.elem)
+	w.stBar.highlight()
+	w.app.Draw()
+}
+
 func (w *Window) Quit() {
+	close(w.evChan)
 	w.app.Stop()
 }
 
@@ -135,5 +172,6 @@ func NewWindow() view.View {
 		cmdBar:     newCommandBar(),
 		screenSize: "",
 		evChan:     make(chan interface{}),
+		isFocusFl:  true,
 	}
 }

@@ -1,10 +1,14 @@
 - [x] Show file details
 - [x] File Selection
 - [x] Use Flex instead of Grid
-- [ ] Display user/group in context view
-- [ ] Current dir file search (view only)
-- [ ] Recursive file search (fs search)
-- [ ] Inotify and FS caching
+- [x] Command bar
 - [ ] Support multiple file contexts
-- [ ] File(s) Action
+- [ ] Help/Info/Error Modal
+- [ ] Current dir file search (view only)
+- [ ] Locations
+- [ ] File/FileSet Actions
+- [ ] Recursive file search (fs search)
+- [ ] Display user/group in context view
+- [ ] Inotify and FS caching
+- [ ] udisks2
  

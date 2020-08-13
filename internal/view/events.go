@@ -1,7 +1,12 @@
 package view
 
 type ScreenSizeChanged struct{}
-type Quit struct{}
+type ToggleCommandMode struct {
+	Prefix rune
+}
+type Command struct {
+	Cmdline string
+}
 type ToggleHiddenFilesVisibility struct{}
 type ToggleFileSelectionView struct{}
 type NavNext struct{}

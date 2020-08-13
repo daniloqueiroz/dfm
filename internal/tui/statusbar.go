@@ -20,11 +20,21 @@ func (s statusbar) update(info view.Status) {
 	s.elem.SetText(msg)
 }
 
+func (s statusbar) fade() {
+	s.elem.SetTextColor(tcell.ColorWhite)
+	s.elem.SetBackgroundColor(tcell.ColorBlack)
+}
+
+func (s statusbar) highlight() {
+	s.elem.SetTextColor(tcell.ColorBlack)
+	s.elem.SetBackgroundColor(tcell.ColorWhite)
+}
+
 func newStatusBar() *statusbar {
 	s := tview.NewTextView()
 	s.SetBorder(false)
 	s.SetTextColor(tcell.ColorBlack)
-	s.SetBackgroundColor(tcell.ColorLightGray)
+	s.SetBackgroundColor(tcell.ColorWhite)
 	s.SetText("statusbar")
 	return &statusbar{
 		elem: s,

@@ -26,10 +26,14 @@ type FileDetails struct {
 }
 
 type View interface {
-	Show(eventHandler func(interface{}))
+	OnEvent(eventHandler func(interface{}))
+	Show()
 	SetLocationBar(path string)
 	SetFileList(items []FileItem)
 	SetStatusMessage(info Status)
 	SetContextDetails(details interface{})
+	SetCommandBar(prefix string)
+	FocusCommandBar()
+	FocusFileList()
 	Quit()
 }
