@@ -1,15 +1,20 @@
 
 # Keyboard Shortcuts
 * General
-  - q: quits
-  - S: toggle selection list view 
-  - L: toggle location view
-  - 0-9: change file context
-  - /: search file (esc to stop search mode)
-  - left/right: previous/next dir
-  - h: toggle hidden files display
+  - **0-9** : change file context
+  - **/** : search file (esc to stop search mode)
+  - **:** : command 
+  - **ESC** : enter/exit command bar
+
 * File list
-  - up/down: navigate file list
-  - enter: enter dir or open file?
-  - +: add dir or file to selection list
-  - -: remove dir from selection list
+  - **Left/Right** : previous/next dir
+  - **Up/Down** : navigate file list
+  - **Enter** : enter dir or open file?
+  - **+** : add dir or file to selection list
+  - **-** : remove dir from selection list
+
+# Commands
+  - **q** : quits dfm
+  - **h** : toggle hidden files visibility
+  - **s** : show/hide selected files list
+  - **toogle _[hidden/selection]_** : see _h_,_s_ commands
