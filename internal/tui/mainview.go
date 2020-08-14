@@ -52,9 +52,6 @@ func (w *Window) keyHandler(event *tcell.EventKey) *tcell.EventKey {
 			w.evChan <- view.ToggleCommandMode{
 				Prefix: '/',
 			}
-		case 'S':
-			w.evChan <- view.ToggleFileSelectionView{}
-			return nil
 		}
 	}
 

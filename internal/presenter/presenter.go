@@ -28,10 +28,6 @@ func (p *presenter) onEvent(event interface{}) {
 		p.onCommandInput(ev.Cmdline)
 	case view.ToggleCommandMode:
 		p.onCommandModeEvent(ev)
-	case view.ToggleHiddenFilesVisibility:
-		p.onFileVisibilityEvent()
-	case view.ToggleFileSelectionView:
-		p.onToggleSelectionViewEvent()
 	case view.NavPrev:
 		p.onNavPrevEvent()
 	case view.NavNext:

@@ -7,8 +7,6 @@ type ToggleCommandMode struct {
 type Command struct {
 	Cmdline string
 }
-type ToggleHiddenFilesVisibility struct{}
-type ToggleFileSelectionView struct{}
 type NavNext struct{}
 type NavPrev struct{}
 type FileListItemHover struct {
