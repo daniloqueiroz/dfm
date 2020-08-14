@@ -7,6 +7,17 @@ import (
 type ViewElement uint8
 
 const (
+	Navigation AppMode = "navigation"
+	Command    AppMode = "command"
+)
+
+type viewConfig struct {
+	mode          AppMode
+	hideHidden    bool
+	showSelection bool // context mode
+}
+
+const (
 	LocationBar ViewElement = 1 << iota
 	FileListView
 	ContextView
@@ -17,7 +28,6 @@ const (
 )
 
 type viewData struct {
-	view              view.View
 	location          string
 	fileList          []view.FileItem
 	status            view.Status
@@ -25,8 +35,4 @@ type viewData struct {
 	selectedList      []view.FileItem
 	commandBarContent string
 	toRefresh         ViewElement
-}
-
-func (vd *viewData) start() {
-	vd.view.Show()
 }

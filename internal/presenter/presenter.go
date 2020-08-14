@@ -11,22 +11,12 @@ import (
 
 type AppMode string
 
-const (
-	Navigation AppMode = "navigation"
-	Command    AppMode = "command"
-)
-
-type viewConfig struct {
-	mode          AppMode
-	hideHidden    bool
-	showSelection bool // context mode
-}
-
 type presenter struct {
-	quitFunc func()
-	fm       *pkg.FileManager
-	cfg      *viewConfig
-	data     *viewData
+	quitFunc  func()
+	fm        *pkg.FileManager
+	cfg       *viewConfig
+	data      *viewData
+	refresher *viewRefresher
 }
 
 func (p *presenter) onEvent(event interface{}) {
@@ -53,7 +43,7 @@ func (p *presenter) onEvent(event interface{}) {
 	default:
 		logger.Infof("Unhandled event: %v", ev)
 	}
-	go refresh(viewUpdateEvent{
+	p.refresher.refresh(viewRefreshEvent{
 		data: *p.data,
 		cfg:  *p.cfg,
 	})
@@ -237,7 +227,7 @@ func (p *presenter) Start() {
 	p.data.fileDetail = nil
 	p.data.selectedList = p.getSelectedItems()
 	p.data.commandBarContent = ""
-	p.data.start()
+	p.refresher.start()
 }
 
 func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {
@@ -249,9 +239,8 @@ func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {
 			hideHidden:    true,
 			showSelection: false,
 		},
-		data: &viewData{
-			view: view,
-		},
+		data:      &viewData{},
+		refresher: newViewRefresher(view),
 	}
 	view.OnEvent(p.onEvent)
 
