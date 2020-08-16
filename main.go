@@ -31,8 +31,11 @@ func main() {
 	}
 
 	fm := pkg.NewFileManager(*startDir)
-	w := tui.NewWindow()
-	p := presenter.NewPresenter(fm, w)
+	v := tui.NewWindow()
+	d := presenter.NewViewDispatcher(v)
+	p := presenter.NewPresenter(fm, v, d)
 	logger.Info("Starting dfm")
+	d.Start()
 	p.Start()
+	v.Show()
 }

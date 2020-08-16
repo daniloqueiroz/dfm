@@ -27,8 +27,8 @@ type FileDetails struct {
 }
 
 type View interface {
-	OnEvent(eventHandler func(interface{}))
 	Show()
+	OnEvent(eventHandler func(interface{}))
 	SetLocationBar(path string)
 	SetFileList(items []FileItem)
 	SetStatusMessage(info Status)

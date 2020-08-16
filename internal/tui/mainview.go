@@ -18,7 +18,7 @@ type Window struct {
 	flView     *filelist
 	ctxView    *contextpane
 	stBar      *statusbar
-	cmdBar     *input
+	cmdBar     *commandBar
 	screenSize string
 	isFocusFl  bool
 }

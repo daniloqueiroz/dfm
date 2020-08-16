@@ -6,18 +6,16 @@ import (
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/google/logger"
 	"log"
-	"strconv"
-	"strings"
 )
 
 type AppMode string
 
 type presenter struct {
-	quitFunc  func()
-	fm        *pkg.FileManager
-	cfg       *viewConfig
-	data      *viewData
-	refresher *viewRefresher
+	quitFunc    func()
+	fm          *pkg.FileManager
+	cfg         *viewConfig
+	data        *viewData
+	viewStateCh chan viewStateChanged
 }
 
 func (p *presenter) Start() {
@@ -28,7 +26,6 @@ func (p *presenter) Start() {
 	p.data.fileDetail = nil
 	p.data.selectedList = p.getSelectedItems()
 	p.data.commandBarContent = ""
-	p.refresher.start()
 }
 
 func (p *presenter) onEvent(event interface{}) {
@@ -36,8 +33,8 @@ func (p *presenter) onEvent(event interface{}) {
 	switch ev := event.(type) {
 	case view.ScreenSizeChanged:
 		p.data.toRefresh = ALL
-	case view.Command:
-		p.onCommandInput(ev.Cmdline)
+	case view.QuitEvent:
+		p.quitFunc()
 	case view.ToggleCommandMode:
 		p.onCommandModeEvent(ev)
 	case view.NavPrev:
@@ -48,68 +45,38 @@ func (p *presenter) onEvent(event interface{}) {
 		p.onListListHoverEvent(ev)
 	case view.FileListItemSelected:
 		p.onItemSelectedEvent(ev)
+	case view.ToggleSelectionView:
+		p.onToggleSelectionViewEvent()
+		p.cfg.mode = Navigation
+	case view.ToggleHiddenFiles:
+		p.onToggleHiddenFilesEvent()
+		p.cfg.mode = Navigation
 	case view.SwitchContext:
 		p.onChangeContext(ev.Index)
+		p.cfg.mode = Navigation
+	case view.CreateContext:
+		baseDir := ev.BaseDir
+		if baseDir == "" {
+			baseDir = p.fm.GetCWD().Path()
+		}
+		p.onCreateContext(baseDir)
+		p.cfg.mode = Navigation
+	case view.CloseContext:
+		idx := ev.Index
+		if idx == -1 {
+			idx = p.fm.GetContextIndex()
+		}
+		p.onCloseContext(idx)
+		p.cfg.mode = Navigation
 	default:
 		logger.Infof("Unhandled event: %v", ev)
 	}
-	p.refresher.refresh(viewRefreshEvent{
+	p.data.toRefresh = p.data.toRefresh | Focus | CommandBar
+
+	p.viewStateCh <- viewStateChanged{
 		data: *p.data,
 		cfg:  *p.cfg,
-	})
-}
-
-func (p *presenter) onCommandInput(cmdline string) {
-	tokens := strings.Split(cmdline, " ")
-	cmd := tokens[0]
-	params := strings.TrimSpace(cmdline[len(cmd):])
-	switch cmd {
-	case QuitCommand, QuitCommandShort:
-		p.quitFunc()
-	case NewContextShort:
-		p.onNewContext("")
-	case CloseContextShort:
-		p.onCloseContext(p.fm.GetContextIndex())
-	case SelectionToggleCommandShort:
-		p.onToggleSelectionViewEvent()
-	case HiddenToggleCommandShort:
-		p.onFileVisibilityEvent()
-	case ToggleCommand:
-		if params == "selection" || params == "details" {
-			p.onToggleSelectionViewEvent()
-		} else if params == "hidden" {
-			p.onFileVisibilityEvent()
-		}
-	case Context:
-		if len(tokens) < 2 {
-			return
-		} else {
-			subcommand := tokens[1]
-			switch subcommand {
-			case "new":
-				if len(tokens) > 2 {
-					params = tokens[2]
-				} else {
-					params = ""
-				}
-				p.onNewContext(params)
-			case "close":
-				var idx int
-				if len(tokens) > 2 {
-					var err error
-					idx, err = strconv.Atoi(tokens[2])
-					if err != nil {
-						return
-					}
-				} else {
-					idx = p.fm.GetContextIndex()
-				}
-				p.onCloseContext(idx)
-			}
-		}
 	}
-	p.data.toRefresh = p.data.toRefresh | Focus | CommandBar
-	p.cfg.mode = Navigation
 }
 
 func (p *presenter) onNavNextEvent() {
@@ -134,7 +101,7 @@ func (p *presenter) onNavPrevEvent() {
 	p.data.toRefresh = ALL
 }
 
-func (p *presenter) onFileVisibilityEvent() {
+func (p *presenter) onToggleHiddenFilesEvent() {
 	p.cfg.hideHidden = !p.cfg.hideHidden
 	cwd := p.fm.GetCWD()
 	p.data.fileList = p.getFiles(cwd)
@@ -261,10 +228,7 @@ func (p *presenter) getFiles(cwd vfs.File) []view.FileItem {
 	return items
 }
 
-func (p *presenter) onNewContext(baseDir string) {
-	if baseDir == "" {
-		baseDir = p.fm.GetCWD().Path()
-	}
+func (p *presenter) onCreateContext(baseDir string) {
 	err := p.fm.NewContext(baseDir) // TODO handle error
 	if err == nil {
 		p.onChangeContext(p.fm.GetContextsCount() - 1)
@@ -297,7 +261,7 @@ func (p *presenter) onCloseContext(idx int) {
 	}
 }
 
-func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {
+func NewPresenter(fm *pkg.FileManager, view view.View, dispatcher *ViewDispatcher) *presenter {
 	p := &presenter{
 		quitFunc: view.Quit,
 		fm:       fm,
@@ -306,8 +270,8 @@ func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {
 			hideHidden:    true,
 			showSelection: false,
 		},
-		data:      &viewData{},
-		refresher: newViewRefresher(view),
+		data:        &viewData{},
+		viewStateCh: dispatcher.StateChangedCh,
 	}
 	view.OnEvent(p.onEvent)
 
