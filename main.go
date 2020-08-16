@@ -17,7 +17,7 @@ func main() {
 
 	cwd, err := os.Getwd() // TODO receive it as parameter
 	if err != nil {
-		logger.Fatalf("Unable to get current directory", err)
+		logger.Fatalf("Unable to get current directory: %v", err)
 	}
 	parser := argparse.NewParser("dfm", "file manager")
 	startDir := parser.String("d", "directory", &argparse.Options{

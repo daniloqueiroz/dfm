@@ -6,4 +6,6 @@ const (
 	ToggleCommand               = ":toggle"
 	HiddenToggleCommandShort    = ":h"
 	SelectionToggleCommandShort = ":s"
+	NewContextShort             = ":n"
+	Context                     = ":context"
 )

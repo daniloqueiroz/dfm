@@ -14,7 +14,8 @@ type FileItem struct {
 }
 
 type Status struct {
-	Context            int
+	ContextCount       int
+	ActiveContext      int
 	FilesCount         int
 	SelectedFilesCount int
 }

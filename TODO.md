@@ -2,7 +2,7 @@
 - [x] File Selection
 - [x] Use Flex instead of Grid
 - [x] Command bar
-- [ ] Support multiple file contexts
+- [x] Support multiple file contexts
 - [ ] Help/Info/Error Modal
 - [ ] Current dir file search (view only)
 - [ ] Locations

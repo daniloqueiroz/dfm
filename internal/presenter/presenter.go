@@ -6,6 +6,7 @@ import (
 	"github.com/daniloqueiroz/dfm/pkg/vfs"
 	"github.com/google/logger"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +18,17 @@ type presenter struct {
 	cfg       *viewConfig
 	data      *viewData
 	refresher *viewRefresher
+}
+
+func (p *presenter) Start() {
+	cwd := p.fm.GetCWD()
+	p.data.location = cwd.Path()
+	p.data.fileList = p.getFiles(cwd)
+	p.data.status = p.getStatus()
+	p.data.fileDetail = nil
+	p.data.selectedList = p.getSelectedItems()
+	p.data.commandBarContent = ""
+	p.refresher.start()
 }
 
 func (p *presenter) onEvent(event interface{}) {
@@ -36,6 +48,8 @@ func (p *presenter) onEvent(event interface{}) {
 		p.onListListHoverEvent(ev)
 	case view.FileListItemSelected:
 		p.onItemSelectedEvent(ev)
+	case view.SwitchContext:
+		p.onChangeContext(ev.Index)
 	default:
 		logger.Infof("Unhandled event: %v", ev)
 	}
@@ -45,11 +59,6 @@ func (p *presenter) onEvent(event interface{}) {
 	})
 }
 
-func (p *presenter) onToggleSelectionViewEvent() {
-	p.cfg.showSelection = !p.cfg.showSelection
-	p.data.toRefresh = ContextView
-}
-
 func (p *presenter) onCommandInput(cmdline string) {
 	tokens := strings.Split(cmdline, " ")
 	cmd := tokens[0]
@@ -57,6 +66,8 @@ func (p *presenter) onCommandInput(cmdline string) {
 	switch cmd {
 	case QuitCommand, QuitCommandShort:
 		p.quitFunc()
+	case NewContextShort:
+		p.onNewContext(params)
 	case SelectionToggleCommandShort:
 		p.onToggleSelectionViewEvent()
 	case HiddenToggleCommandShort:
@@ -66,6 +77,33 @@ func (p *presenter) onCommandInput(cmdline string) {
 			p.onToggleSelectionViewEvent()
 		} else if params == "hidden" {
 			p.onFileVisibilityEvent()
+		}
+	case Context:
+		if len(tokens) < 2 {
+			return
+		} else {
+			subcommand := tokens[1]
+			switch subcommand {
+			case "new":
+				if len(tokens) > 2 {
+					params = tokens[2]
+				} else {
+					params = ""
+				}
+				p.onNewContext(params)
+			case "close":
+				var idx int
+				if len(tokens) > 2 {
+					var err error
+					idx, err = strconv.Atoi(tokens[2])
+					if err != nil {
+						return
+					}
+				} else {
+					idx = p.fm.GetContextIndex()
+				}
+				p.onCloseContext(idx)
+			}
 		}
 	}
 	p.data.toRefresh = p.data.toRefresh | Focus | CommandBar
@@ -100,6 +138,11 @@ func (p *presenter) onFileVisibilityEvent() {
 	p.data.fileList = p.getFiles(cwd)
 	p.data.status = p.getStatus()
 	p.data.toRefresh = FileListView | StatusBar
+}
+
+func (p *presenter) onToggleSelectionViewEvent() {
+	p.cfg.showSelection = !p.cfg.showSelection
+	p.data.toRefresh = ContextView
 }
 
 func (p *presenter) onListListHoverEvent(ev view.FileListItemHover) {
@@ -156,7 +199,8 @@ func (p *presenter) onItemSelectedEvent(ev view.FileListItemSelected) {
 
 func (p *presenter) getStatus() view.Status {
 	return view.Status{
-		Context:            p.fm.GetContextNumber(),
+		ContextCount:       p.fm.GetContextsCount(),
+		ActiveContext:      p.fm.GetContextIndex(),
 		FilesCount:         len(p.data.fileList),
 		SelectedFilesCount: len(p.data.selectedList),
 	}
@@ -215,15 +259,40 @@ func (p *presenter) getFiles(cwd vfs.File) []view.FileItem {
 	return items
 }
 
-func (p *presenter) Start() {
-	cwd := p.fm.GetCWD()
-	p.data.location = cwd.Path()
-	p.data.fileList = p.getFiles(cwd)
-	p.data.status = p.getStatus()
-	p.data.fileDetail = nil
-	p.data.selectedList = p.getSelectedItems()
-	p.data.commandBarContent = ""
-	p.refresher.start()
+func (p *presenter) onNewContext(baseDir string) {
+	if baseDir == "" {
+		baseDir = p.fm.GetCWD().Path()
+	}
+	err := p.fm.NewContext(baseDir) // TODO handle error
+	if err == nil {
+		p.onChangeContext(p.fm.GetContextsCount() - 1)
+	}
+}
+
+func (p *presenter) onChangeContext(idx int) {
+	err := p.fm.SwitchContext(idx) // TODO handle error
+	if err == nil {
+		cwd := p.fm.GetCWD()
+		p.data.location = cwd.Path()
+		p.data.fileList = p.getFiles(cwd)
+		p.data.selectedList = p.getSelectedItems()
+		p.data.status = p.getStatus()
+		p.data.fileDetail = nil
+		p.data.toRefresh = ALL
+	}
+}
+
+func (p *presenter) onCloseContext(idx int) {
+	err := p.fm.DiscardContext(idx) // TODO handle error
+	if err == nil {
+		cwd := p.fm.GetCWD()
+		p.data.location = cwd.Path()
+		p.data.fileList = p.getFiles(cwd)
+		p.data.selectedList = p.getSelectedItems()
+		p.data.status = p.getStatus()
+		p.data.fileDetail = nil
+		p.data.toRefresh = ALL
+	}
 }
 
 func NewPresenter(fm *pkg.FileManager, view view.View) *presenter {

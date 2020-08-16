@@ -5,6 +5,7 @@ import (
 	"github.com/daniloqueiroz/dfm/internal/view"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"strings"
 )
 
 type statusbar struct {
@@ -14,7 +15,17 @@ type statusbar struct {
 func (s statusbar) update(info view.Status) {
 	counters := fmt.Sprintf(" # files: %d | # files selected: %d ", info.FilesCount, info.SelectedFilesCount)
 	_, _, width, _ := s.elem.GetRect()
-	prefix := fmt.Sprintf("[ %d ]", info.Context)
+	var prefixBuilder strings.Builder
+	prefixBuilder.WriteString(" [")
+	for idx := 0; idx < info.ContextCount; idx++ {
+		if idx == info.ActiveContext {
+			prefixBuilder.WriteString(fmt.Sprintf(" [::bu]%d[::-]", idx))
+		} else {
+			prefixBuilder.WriteString(fmt.Sprintf(" %d", idx))
+		}
+	}
+	prefixBuilder.WriteString(" ]")
+	prefix := prefixBuilder.String()
 	padding := width - len(prefix)
 	msg := fmt.Sprintf("%s%*s", prefix, padding, counters)
 	s.elem.SetText(msg)
@@ -35,7 +46,7 @@ func newStatusBar() *statusbar {
 	s.SetBorder(false)
 	s.SetTextColor(tcell.ColorBlack)
 	s.SetBackgroundColor(tcell.ColorWhite)
-	s.SetText("statusbar")
+	s.SetDynamicColors(true)
 	return &statusbar{
 		elem: s,
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/google/logger"
 	"github.com/rivo/tview"
+	"strconv"
 )
 
 type Window struct {
@@ -43,6 +44,18 @@ func (w *Window) keyHandler(event *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if w.isFocusFl {
+		logger.Infof(event.Name())
+		switch event.Name() {
+		case "Alt+Rune[0]", "Alt+Rune[1]", "Alt+Rune[2]", "Alt+Rune[3]",
+			"Alt+Rune[4]", "Alt+Rune[5]", "Alt+Rune[6]",
+			"Alt+Rune[7]", "Alt+Rune[8]", "Alt+Rune[9]":
+			val, err := strconv.Atoi(string(event.Rune()))
+			if err == nil {
+				w.evChan <- view.SwitchContext{
+					Index: val,
+				}
+			}
+		}
 		switch event.Rune() {
 		case ':':
 			w.evChan <- view.ToggleCommandMode{

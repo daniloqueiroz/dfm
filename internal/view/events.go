@@ -14,6 +14,9 @@ type FileListItemHover struct {
 	Name string
 }
 type FileSelectionType string
+type SwitchContext struct {
+	Index int
+}
 
 const (
 	Open                FileSelectionType = "open"
