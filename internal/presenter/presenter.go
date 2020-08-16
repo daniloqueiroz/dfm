@@ -67,7 +67,9 @@ func (p *presenter) onCommandInput(cmdline string) {
 	case QuitCommand, QuitCommandShort:
 		p.quitFunc()
 	case NewContextShort:
-		p.onNewContext(params)
+		p.onNewContext("")
+	case CloseContextShort:
+		p.onCloseContext(p.fm.GetContextIndex())
 	case SelectionToggleCommandShort:
 		p.onToggleSelectionViewEvent()
 	case HiddenToggleCommandShort:

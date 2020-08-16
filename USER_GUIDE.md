@@ -18,3 +18,6 @@
   - **h** : toggle hidden files visibility
   - **s** : show/hide selected files list
   - **toogle _[hidden/selection]_** : see _h_,_s_ commands
+  - **n** : create a new context (base dir is the same as current context dir)
+  - **w** : close current context
+  - **context _[new/close]_** : create a new context with the given base dir / close a given context
